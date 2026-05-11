@@ -79,11 +79,13 @@
       font-size: 11px; font-weight: 600; color: var(--text-muted);
       margin-bottom: 6px; cursor: pointer; user-select: none;
       text-transform: uppercase; letter-spacing: 0.05em;
+      display: flex; justify-content: space-between; align-items: center;
     }
-    #shortcuts h4::before { content: '+ '; }
-    #shortcuts h4.open::before { content: '- '; }
-    .shortcut-grid { display: none; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 11px; }
-    .shortcut-grid.open { display: grid; }
+    #shortcuts h4::after { content: '+'; font-size: 14px; font-weight: 300; transition: transform 0.2s ease; display: inline-block; }
+    #shortcuts h4.open::after { transform: rotate(45deg); content: '+'; }
+    .shortcut-grid-wrap { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+    .shortcut-grid-wrap.open { max-height: 2000px; transition: max-height 0.4s ease; }
+    .shortcut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 11px; padding-top: 4px; }
     .shortcut-item { display: flex; justify-content: space-between; padding: 3px 6px; border-radius: 3px; }
     .shortcut-item:nth-child(odd) { background: var(--code-bg); }
     .shortcut-key { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }
@@ -103,23 +105,29 @@
   <div id="history"><h4>Recent</h4><div id="history-list"></div></div>
   <div id="shortcuts">
     <h4 id="shortcuts-toggle">Shortcuts</h4>
-    <div class="shortcut-grid" id="shortcuts-grid">
-      <div class="shortcut-item"><span>sqrt</span><span class="shortcut-key">square root</span></div>
-      <div class="shortcut-item"><span>frac</span><span class="shortcut-key">fraction</span></div>
-      <div class="shortcut-item"><span>int</span><span class="shortcut-key">integral</span></div>
-      <div class="shortcut-item"><span>sum</span><span class="shortcut-key">summation</span></div>
-      <div class="shortcut-item"><span>prod</span><span class="shortcut-key">product</span></div>
-      <div class="shortcut-item"><span>pi, theta...</span><span class="shortcut-key">greek</span></div>
-      <div class="shortcut-item"><span>infty</span><span class="shortcut-key">infinity</span></div>
-      <div class="shortcut-item"><span>partial</span><span class="shortcut-key">partial</span></div>
-      <div class="shortcut-item"><span>nabla</span><span class="shortcut-key">gradient</span></div>
-      <div class="shortcut-item"><span>rightarrow</span><span class="shortcut-key">arrow</span></div>
-      <div class="shortcut-item"><span>subset, cup...</span><span class="shortcut-key">sets</span></div>
-      <div class="shortcut-item"><span>forall, exists</span><span class="shortcut-key">logic</span></div>
-      <div class="shortcut-item"><span>^</span><span class="shortcut-key">superscript</span></div>
-      <div class="shortcut-item"><span>_</span><span class="shortcut-key">subscript</span></div>
-      <div class="shortcut-item"><span>Space</span><span class="shortcut-key">next slot</span></div>
-      <div class="shortcut-item"><span>Backspace</span><span class="shortcut-key">revert</span></div>
+    <div class="shortcut-grid-wrap" id="shortcuts-grid">
+      <div class="shortcut-grid">
+      <div class="shortcut-item"><span class="shortcut-key">sqrt</span><span>&#8730;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">frac</span><span>a/b</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">int</span><span>&#8747;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">sum</span><span>&#8721;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">prod</span><span>&#8719;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">pi, theta...</span><span>greek</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">infty</span><span>&#8734;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">partial</span><span>&#8706;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">nabla</span><span>&#8711;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">-&gt;</span><span>&#8594;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">=&gt;</span><span>&#8658;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">&lt;=</span><span>&#8804;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">&gt;=</span><span>&#8805;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">pmatrix + Space</span><span>( ) matrix</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">bmatrix + Space</span><span>[ ] matrix</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">^</span><span>x&#8319;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">_</span><span>x&#8345;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">vec</span><span>x&#8407;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">hat</span><span>x&#770;</span></div>
+      <div class="shortcut-item"><span class="shortcut-key">Space</span><span>next slot</span></div>
+      </div>
     </div>
   </div>
 
@@ -128,11 +136,12 @@
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script>
     var MQ = MathQuill.getInterface(2);
+
     var mathField = MQ.MathField(document.getElementById('math-field'), {
       spaceBehavesLikeTab: true,
       leftRightIntoCmdGoes: 'up',
       restrictMismatchedBrackets: true,
-      autoCommands: 'pi theta sqrt cbrt nthroot sum int prod ' +
+      autoCommands: 'pi theta sqrt cbrt nthroot sum prod ' +
         'alpha beta gamma delta epsilon zeta eta iota kappa lambda mu nu xi rho sigma tau upsilon phi chi psi omega ' +
         'Gamma Delta Theta Lambda Xi Pi Sigma Phi Psi Omega ' +
         'infty partial nabla forall exists emptyset ' +
@@ -146,10 +155,11 @@
         'perp parallel angle triangle ' +
         'star dagger diamond bullet ' +
         'aleph hbar ell wp Re Im ' +
-        'iint iiint oint coprod bigcup bigcap ' +
+        'int iint iiint oint coprod bigcup bigcap ' +
         'langle rangle lceil rceil lfloor rfloor ' +
         'ldots cdots vdots ddots ' +
-        'nexists notin',
+        'nexists notin ' +
+        'vec hat bar dot ddot tilde overline underline widehat widetilde',
       autoOperatorNames: 'sin cos tan sec csc cot arcsin arccos arctan sinh cosh tanh ' +
         'ln log lim min max gcd lcm deg det dim ker exp sup inf',
       supSubsRequireOperand: true,
@@ -161,6 +171,121 @@
         }
       }
     });
+
+    // ── Multi-char symbol shortcuts ──────────────────────────────────────────
+    // Intercept keydown on MathQuill's textarea (capture phase) to handle:
+    //   ->   →  \rightarrow       Backspace reverts to "->"
+    //   =>   →  \Rightarrow       Backspace reverts to "=>"
+    //   <=   →  \leq              Backspace reverts to "<="
+    //   >=   →  \geq              Backspace reverts to ">="
+    //
+    // Matrix word shortcuts (type word then Space):
+    //   pmatrix / bmatrix / vmatrix / Bmatrix / matrix + Space
+    //   → inserts a 2×2 matrix with navigable empty cells
+    //   Backspace immediately after reverts to the typed word
+    // ────────────────────────────────────────────────────────────────────────
+
+    var keyBuf = '';
+    var MAX_BUF = 8;
+
+    // After a substitution, store the original chars so Backspace can revert
+    var lastSubst = null; // string of chars to re-type on revert
+
+    var MATRIX_CMDS = {
+      'pmatrix': 'pmatrix',
+      'bmatrix': 'bmatrix',
+      'vmatrix': 'vmatrix',
+      'Bmatrix': 'Bmatrix',
+      'matrix':  'matrix'
+    };
+    var MATRIX_WORDS = Object.keys(MATRIX_CMDS).sort(function(a,b){ return b.length - a.length; });
+
+    function insertMatrix(envName) {
+      // Empty cells — MathQuill creates navigable blank slots
+      mathField.write('\\begin{' + envName + '}&\\\\&\\end{' + envName + '}');
+    }
+
+    function attachKeyListener() {
+      var ta = document.querySelector('#math-field textarea');
+      if (!ta) { setTimeout(attachKeyListener, 50); return; }
+
+      ta.addEventListener('keydown', function(e) {
+        var key = e.key;
+
+        // ── Backspace: revert last auto-substitution ──────────────────────
+        if (key === 'Backspace' && lastSubst !== null) {
+          e.preventDefault(); e.stopImmediatePropagation();
+          mathField.keystroke('Backspace'); // remove the substituted symbol
+          // Re-type the original characters literally
+          for (var ci = 0; ci < lastSubst.length; ci++) {
+            mathField.typedText(lastSubst[ci]);
+          }
+          lastSubst = null;
+          keyBuf = '';
+          return;
+        }
+
+        // Non-printable keys clear state (but let MathQuill handle them)
+        if (key.length !== 1) {
+          lastSubst = null;
+          keyBuf = '';
+          return;
+        }
+
+        // Track printable chars; any new char clears revert state
+        keyBuf = (keyBuf + key).slice(-MAX_BUF);
+        lastSubst = null;
+
+        var tail2 = keyBuf.slice(-2);
+
+        // ── 2-char arrow / comparison shortcuts ──────────────────────────
+        if (tail2 === '->') {
+          e.preventDefault(); e.stopImmediatePropagation();
+          mathField.keystroke('Backspace'); // remove '-'
+          mathField.cmd('\\rightarrow');
+          lastSubst = '->'; keyBuf = ''; return;
+        }
+        if (tail2 === '=>') {
+          e.preventDefault(); e.stopImmediatePropagation();
+          mathField.keystroke('Backspace'); // remove '='
+          mathField.cmd('\\Rightarrow');
+          lastSubst = '=>'; keyBuf = ''; return;
+        }
+        if (tail2 === '<=') {
+          e.preventDefault(); e.stopImmediatePropagation();
+          mathField.keystroke('Backspace'); // remove '<'
+          mathField.cmd('\\leq');
+          lastSubst = '<='; keyBuf = ''; return;
+        }
+        if (tail2 === '>=') {
+          e.preventDefault(); e.stopImmediatePropagation();
+          mathField.keystroke('Backspace'); // remove '>'
+          mathField.cmd('\\geq');
+          lastSubst = '>='; keyBuf = ''; return;
+        }
+
+        // ── Matrix shortcuts: word + Space ────────────────────────────────
+        // Space (key===' ') reaches here since length===1.
+        // We only intercept when the buffer ends with a known matrix word.
+        // Otherwise Space falls through to MathQuill (spaceBehavesLikeTab).
+        if (key === ' ') {
+          var word = keyBuf.slice(0, -1); // buffer before the space
+          for (var i = 0; i < MATRIX_WORDS.length; i++) {
+            var w = MATRIX_WORDS[i];
+            if (word.slice(-w.length) === w) {
+              e.preventDefault(); e.stopImmediatePropagation();
+              for (var j = 0; j < w.length; j++) mathField.keystroke('Backspace');
+              insertMatrix(MATRIX_CMDS[w]);
+              lastSubst = w; keyBuf = ''; return;
+            }
+          }
+          // No match — Space falls through to MathQuill's tab-slot behavior
+        }
+
+      }, true); // capture phase — fires before MathQuill's own listener
+    }
+
+    attachKeyListener();
     mathField.focus();
 
     function updatePreview(latex) {
@@ -196,6 +321,8 @@
 
     document.getElementById('btn-clear').addEventListener('click', function() {
       mathField.latex('');
+      updatePreview('');
+      updateLatexSource('');
       mathField.focus();
     });
 
