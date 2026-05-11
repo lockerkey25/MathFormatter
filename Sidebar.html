@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e4e4e7;
+      --border-focus: #18181b;
+      --text: #18181b;
+      --text-muted: #71717a;
+      --text-faint: #a1a1aa;
+      --accent: #18181b;
+      --accent-hover: #27272a;
+      --code-bg: #f4f4f5;
+      --latex-bg: #18181b;
+      --latex-text: #a1f0c8;
+      --radius: 6px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 12px; color: var(--text); font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+    h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.02em; }
+    #math-field {
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      padding: 12px; min-height: 50px; font-size: 18px;
+      width: 100%; display: block; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    #math-field:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(24,24,27,0.08); }
+    #math-field .mq-cursor { border-left-color: var(--accent); }
+    #preview {
+      margin-top: 10px; padding: 10px; background: var(--code-bg);
+      border-radius: var(--radius); min-height: 36px; text-align: center;
+      border: 1px solid var(--border);
+    }
+    #preview .katex { font-size: 1.3em; }
+    #preview-empty { color: var(--text-faint); font-size: 12px; }
+    #latex-source {
+      margin-top: 8px; padding: 6px 10px; background: var(--latex-bg);
+      color: var(--latex-text); border-radius: var(--radius);
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      word-break: break-all; cursor: pointer; transition: background 0.15s;
+    }
+    #latex-source:hover { background: #27272a; }
+    #latex-source::before { content: 'LaTeX  '; color: #71717a; font-weight: 500; }
+    .btn-row { margin-top: 10px; display: flex; gap: 6px; }
+    button {
+      flex: 1; padding: 8px 12px; border: none; border-radius: var(--radius);
+      font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--code-bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #e4e4e7; }
+    .btn-text { background: none; color: var(--text-muted); flex: 0; padding: 8px; }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    #status { margin-top: 6px; font-size: 11px; color: var(--text-muted); min-height: 14px; }
+    #status.success { color: #16a34a; }
+    #status.error { color: #dc2626; }
+    #history { margin-top: 12px; }
+    #history h4 { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .history-item {
+      padding: 4px 6px; font-size: 11px; cursor: pointer;
+      border-radius: 4px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-item:hover { background: var(--code-bg); }
+    .history-item .katex { font-size: 0.9em; }
+    .history-reuse { color: var(--text-muted); font-size: 10px; }
+    #shortcuts { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+    #shortcuts h4 {
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      margin-bottom: 6px; cursor: pointer; user-select: none;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    #shortcuts h4::before { content: '+ '; }
+    #shortcuts h4.open::before { content: '- '; }
+    .shortcut-grid { display: none; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 11px; }
+    .shortcut-grid.open { display: grid; }
+    .shortcut-item { display: flex; justify-content: space-between; padding: 3px 6px; border-radius: 3px; }
+    .shortcut-item:nth-child(odd) { background: var(--code-bg); }
+    .shortcut-key { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <h3>Math Formatter</h3>
+  <span id="math-field"></span>
+  <div id="preview"><span id="preview-empty">Type math above</span></div>
+  <div id="latex-source" title="Click to copy LaTeX" role="button" tabindex="0" aria-label="LaTeX source code, click to copy"></div>
+  <div class="btn-row">
+    <button class="btn-primary" id="btn-insert-image" aria-label="Insert equation as image">Insert Image</button>
+    <button class="btn-secondary" id="btn-insert-latex" aria-label="Insert raw LaTeX">Insert LaTeX</button>
+    <button class="btn-text" id="btn-clear" aria-label="Clear editor">x</button>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="history"><h4>Recent</h4><div id="history-list"></div></div>
+  <div id="shortcuts">
+    <h4 id="shortcuts-toggle">Shortcuts</h4>
+    <div class="shortcut-grid" id="shortcuts-grid">
+      <div class="shortcut-item"><span>sqrt</span><span class="shortcut-key">square root</span></div>
+      <div class="shortcut-item"><span>frac</span><span class="shortcut-key">fraction</span></div>
+      <div class="shortcut-item"><span>int</span><span class="shortcut-key">integral</span></div>
+      <div class="shortcut-item"><span>sum</span><span class="shortcut-key">summation</span></div>
+      <div class="shortcut-item"><span>prod</span><span class="shortcut-key">product</span></div>
+      <div class="shortcut-item"><span>pi, theta...</span><span class="shortcut-key">greek</span></div>
+      <div class="shortcut-item"><span>infty</span><span class="shortcut-key">infinity</span></div>
+      <div class="shortcut-item"><span>partial</span><span class="shortcut-key">partial</span></div>
+      <div class="shortcut-item"><span>nabla</span><span class="shortcut-key">gradient</span></div>
+      <div class="shortcut-item"><span>rightarrow</span><span class="shortcut-key">arrow</span></div>
+      <div class="shortcut-item"><span>subset, cup...</span><span class="shortcut-key">sets</span></div>
+      <div class="shortcut-item"><span>forall, exists</span><span class="shortcut-key">logic</span></div>
+      <div class="shortcut-item"><span>^</span><span class="shortcut-key">superscript</span></div>
+      <div class="shortcut-item"><span>_</span><span class="shortcut-key">subscript</span></div>
+      <div class="shortcut-item"><span>Space</span><span class="shortcut-key">next slot</span></div>
+      <div class="shortcut-item"><span>Backspace</span><span class="shortcut-key">revert</span></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathquill/0.10.1/mathquill.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script>
+    var MQ = MathQuill.getInterface(2);
+    var mathField = MQ.MathField(document.getElementById('math-field'), {
+      spaceBehavesLikeTab: true,
+      leftRightIntoCmdGoes: 'up',
+      restrictMismatchedBrackets: true,
+      autoCommands: 'pi theta sqrt cbrt nthroot sum int prod ' +
+        'alpha beta gamma delta epsilon zeta eta iota kappa lambda mu nu xi rho sigma tau upsilon phi chi psi omega ' +
+        'Gamma Delta Theta Lambda Xi Pi Sigma Phi Psi Omega ' +
+        'infty partial nabla forall exists emptyset ' +
+        'neq approx equiv cong sim propto ' +
+        'pm mp times div cdot circ oplus otimes ' +
+        'subset supset subseteq supseteq cup cap setminus ' +
+        'neg land lor implies iff ' +
+        'rightarrow leftarrow leftrightarrow Rightarrow Leftarrow Leftrightarrow ' +
+        'uparrow downarrow mapsto longrightarrow longleftarrow ' +
+        'hookrightarrow hookleftarrow nearrow searrow nwarrow ' +
+        'perp parallel angle triangle ' +
+        'star dagger diamond bullet ' +
+        'aleph hbar ell wp Re Im ' +
+        'iint iiint oint coprod bigcup bigcap ' +
+        'langle rangle lceil rceil lfloor rfloor ' +
+        'ldots cdots vdots ddots ' +
+        'nexists notin',
+      autoOperatorNames: 'sin cos tan sec csc cot arcsin arccos arctan sinh cosh tanh ' +
+        'ln log lim min max gcd lcm deg det dim ker exp sup inf',
+      supSubsRequireOperand: true,
+      handlers: {
+        edit: function() {
+          var latex = mathField.latex();
+          updatePreview(latex);
+          updateLatexSource(latex);
+        }
+      }
+    });
+    mathField.focus();
+
+    function updatePreview(latex) {
+      var el = document.getElementById('preview');
+      if (!latex) { el.innerHTML = '<span id="preview-empty">Type math above</span>'; return; }
+      try { katex.render(latex, el, { displayMode: true, throwOnError: false, errorColor: '#dc2626' }); }
+      catch(e) {}
+    }
+
+    function updateLatexSource(latex) {
+      document.getElementById('latex-source').textContent = latex || '(empty)';
+    }
+
+    document.getElementById('btn-insert-image').addEventListener('click', function() {
+      var latex = mathField.latex();
+      if (!latex) return;
+      setStatus('Inserting...', '');
+      google.script.run
+        .withSuccessHandler(function() { setStatus('Inserted', 'success'); addToHistory(latex); })
+        .withFailureHandler(function(err) { setStatus('Error: ' + err.message, 'error'); })
+        .insertEquation(latex);
+    });
+
+    document.getElementById('btn-insert-latex').addEventListener('click', function() {
+      var latex = mathField.latex();
+      if (!latex) return;
+      setStatus('Inserting LaTeX...', '');
+      google.script.run
+        .withSuccessHandler(function() { setStatus('Inserted', 'success'); addToHistory(latex); })
+        .withFailureHandler(function(err) { setStatus('Error: ' + err.message, 'error'); })
+        .insertLatexSource(latex);
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', function() {
+      mathField.latex('');
+      mathField.focus();
+    });
+
+    document.getElementById('latex-source').addEventListener('click', function() {
+      var latex = mathField.latex();
+      if (!latex) return;
+      navigator.clipboard.writeText(latex).then(function() { setStatus('Copied', 'success'); });
+    });
+
+    function setStatus(msg, cls) {
+      var el = document.getElementById('status');
+      el.textContent = msg; el.className = cls || '';
+      if (cls === 'success') setTimeout(function() { el.textContent = ''; el.className = ''; }, 3000);
+    }
+
+    var HISTORY_KEY = 'mathFormatterHistory';
+    var MAX_HISTORY = 10;
+    function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch(e) { return []; } }
+    function addToHistory(latex) {
+      var hist = getHistory().filter(function(h) { return h !== latex; });
+      hist.unshift(latex);
+      if (hist.length > MAX_HISTORY) hist = hist.slice(0, MAX_HISTORY);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(hist));
+      renderHistory();
+    }
+    function renderHistory() {
+      var list = document.getElementById('history-list');
+      var hist = getHistory();
+      if (!hist.length) { list.innerHTML = ''; return; }
+      list.innerHTML = hist.map(function(latex) {
+        var rendered = '';
+        try { rendered = katex.renderToString(latex, { throwOnError: false }); }
+        catch(e) { rendered = '<code>' + latex + '</code>'; }
+        return '<div class="history-item" data-latex="' + latex.replace(/"/g, '&quot;') + '">' +
+          '<span>' + rendered + '</span><span class="history-reuse">use</span></div>';
+      }).join('');
+    }
+    document.getElementById('history-list').addEventListener('click', function(e) {
+      var item = e.target.closest('.history-item');
+      if (!item) return;
+      mathField.latex(item.dataset.latex);
+      mathField.focus();
+    });
+    renderHistory();
+
+    document.getElementById('shortcuts-toggle').addEventListener('click', function() {
+      this.classList.toggle('open');
+      document.getElementById('shortcuts-grid').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

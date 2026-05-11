@@ -1,0 +1,21 @@
+{
+  "timeZone": "America/New_York",
+  "dependencies": {},
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/documents.currentonly",
+    "https://www.googleapis.com/auth/script.container.ui"
+  ],
+  "addOns": {
+    "common": {
+      "name": "Math Formatter",
+      "logoUrl": "https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/function/default/48px.svg"
+    },
+    "docs": {
+      "onFileScopeGrantedTrigger": {
+        "runFunction": "onOpen"
+      }
+    }
+  }
+}
