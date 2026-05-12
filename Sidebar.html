@@ -137,6 +137,24 @@
   <script>
     var MQ = MathQuill.getInterface(2);
 
+    var lastSubst = null;
+    var skipEdit  = false;
+
+    var WORD_CMDS = {
+      'iiint':   { type: 'write', latex: '\\iiint' },
+      'iint':    { type: 'write', latex: '\\iint' },
+      'pmatrix': { type: 'matrix', env: 'pmatrix' },
+      'bmatrix': { type: 'matrix', env: 'bmatrix' },
+      'vmatrix': { type: 'matrix', env: 'vmatrix' },
+      'Bmatrix': { type: 'matrix', env: 'Bmatrix' },
+      'matrix':  { type: 'matrix', env: 'matrix' }
+    };
+    var WORD_LIST = Object.keys(WORD_CMDS).sort(function(a,b){ return b.length - a.length; });
+
+    function insertMatrix(envName) {
+      mathField.write('\\begin{' + envName + '}&\\\\&\\end{' + envName + '}');
+    }
+
     var mathField = MQ.MathField(document.getElementById('math-field'), {
       spaceBehavesLikeTab: true,
       leftRightIntoCmdGoes: 'up',
@@ -155,7 +173,7 @@
         'perp parallel angle triangle ' +
         'star dagger diamond bullet ' +
         'aleph hbar ell wp Re Im ' +
-        'int iint iiint oint coprod bigcup bigcap ' +
+        'int oint coprod bigcup bigcap ' +
         'langle rangle lceil rceil lfloor rfloor ' +
         'ldots cdots vdots ddots ' +
         'nexists notin ' +
@@ -165,6 +183,7 @@
       supSubsRequireOperand: true,
       handlers: {
         edit: function() {
+          if (skipEdit) return;
           var latex = mathField.latex();
           updatePreview(latex);
           updateLatexSource(latex);
@@ -172,120 +191,72 @@
       }
     });
 
-    // ── Multi-char symbol shortcuts ──────────────────────────────────────────
-    // Intercept keydown on MathQuill's textarea (capture phase) to handle:
-    //   ->   →  \rightarrow       Backspace reverts to "->"
-    //   =>   →  \Rightarrow       Backspace reverts to "=>"
-    //   <=   →  \leq              Backspace reverts to "<="
-    //   >=   →  \geq              Backspace reverts to ">="
-    //
-    // Matrix word shortcuts (type word then Space):
-    //   pmatrix / bmatrix / vmatrix / Bmatrix / matrix + Space
-    //   → inserts a 2×2 matrix with navigable empty cells
-    //   Backspace immediately after reverts to the typed word
-    // ────────────────────────────────────────────────────────────────────────
+    var mqTA = document.querySelector('#math-field textarea');
+    var prevKey = '';
 
-    var keyBuf = '';
-    var MAX_BUF = 8;
+    mqTA.addEventListener('keydown', function(e) {
+      var key = e.key;
 
-    // After a substitution, store the original chars so Backspace can revert
-    var lastSubst = null; // string of chars to re-type on revert
-
-    var MATRIX_CMDS = {
-      'pmatrix': 'pmatrix',
-      'bmatrix': 'bmatrix',
-      'vmatrix': 'vmatrix',
-      'Bmatrix': 'Bmatrix',
-      'matrix':  'matrix'
-    };
-    var MATRIX_WORDS = Object.keys(MATRIX_CMDS).sort(function(a,b){ return b.length - a.length; });
-
-    function insertMatrix(envName) {
-      // Empty cells — MathQuill creates navigable blank slots
-      mathField.write('\\begin{' + envName + '}&\\\\&\\end{' + envName + '}');
-    }
-
-    function attachKeyListener() {
-      var ta = document.querySelector('#math-field textarea');
-      if (!ta) { setTimeout(attachKeyListener, 50); return; }
-
-      ta.addEventListener('keydown', function(e) {
-        var key = e.key;
-
-        // ── Backspace: revert last auto-substitution ──────────────────────
-        if (key === 'Backspace' && lastSubst !== null) {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove the substituted symbol
-          // Re-type the original characters literally
-          for (var ci = 0; ci < lastSubst.length; ci++) {
-            mathField.typedText(lastSubst[ci]);
-          }
-          lastSubst = null;
-          keyBuf = '';
-          return;
+      if (key === 'Backspace' && lastSubst !== null) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        mathField.keystroke('Backspace');
+        for (var ci = 0; ci < lastSubst.length; ci++) {
+          mathField.typedText(lastSubst[ci]);
         }
-
-        // Non-printable keys clear state (but let MathQuill handle them)
-        if (key.length !== 1) {
-          lastSubst = null;
-          keyBuf = '';
-          return;
-        }
-
-        // Track printable chars; any new char clears revert state
-        keyBuf = (keyBuf + key).slice(-MAX_BUF);
         lastSubst = null;
+        prevKey = '';
+        return;
+      }
 
-        var tail2 = keyBuf.slice(-2);
+      if (key !== 'Shift' && key !== 'Control' && key !== 'Alt' && key !== 'Meta') {
+        lastSubst = null;
+      }
 
-        // ── 2-char arrow / comparison shortcuts ──────────────────────────
-        if (tail2 === '->') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '-'
-          mathField.cmd('\\rightarrow');
-          lastSubst = '->'; keyBuf = ''; return;
-        }
-        if (tail2 === '=>') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '='
-          mathField.cmd('\\Rightarrow');
-          lastSubst = '=>'; keyBuf = ''; return;
-        }
-        if (tail2 === '<=') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '<'
-          mathField.cmd('\\leq');
-          lastSubst = '<='; keyBuf = ''; return;
-        }
-        if (tail2 === '>=') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '>'
-          mathField.cmd('\\geq');
-          lastSubst = '>='; keyBuf = ''; return;
-        }
+      if (prevKey === '-' && key === '>') {
+        e.preventDefault(); e.stopImmediatePropagation();
+        mathField.keystroke('Backspace');
+        mathField.write('\\rightarrow ');
+        lastSubst = '->';
+        prevKey = '';
+        return;
+      }
 
-        // ── Matrix shortcuts: word + Space ────────────────────────────────
-        // Space (key===' ') reaches here since length===1.
-        // We only intercept when the buffer ends with a known matrix word.
-        // Otherwise Space falls through to MathQuill (spaceBehavesLikeTab).
-        if (key === ' ') {
-          var word = keyBuf.slice(0, -1); // buffer before the space
-          for (var i = 0; i < MATRIX_WORDS.length; i++) {
-            var w = MATRIX_WORDS[i];
-            if (word.slice(-w.length) === w) {
-              e.preventDefault(); e.stopImmediatePropagation();
-              for (var j = 0; j < w.length; j++) mathField.keystroke('Backspace');
-              insertMatrix(MATRIX_CMDS[w]);
-              lastSubst = w; keyBuf = ''; return;
-            }
+      if (prevKey === '=' && key === '>') {
+        e.preventDefault(); e.stopImmediatePropagation();
+        mathField.keystroke('Backspace');
+        mathField.write('\\Rightarrow ');
+        lastSubst = '=>';
+        prevKey = '';
+        return;
+      }
+
+      prevKey = key.length === 1 ? key : '';
+    });
+
+    mqTA.addEventListener('keyup', function(e) {
+      if (e.key !== ' ') return;
+      var latex = mathField.latex();
+      for (var i = 0; i < WORD_LIST.length; i++) {
+        var w = WORD_LIST[i];
+        if (latex.slice(-w.length) === w) {
+          var cmd = WORD_CMDS[w];
+          var base = latex.slice(0, -w.length);
+          skipEdit = true;
+          mathField.latex(base);
+          skipEdit = false;
+          if (cmd.type === 'matrix') {
+            insertMatrix(cmd.env);
+          } else {
+            mathField.write(cmd.latex);
           }
-          // No match — Space falls through to MathQuill's tab-slot behavior
+          lastSubst = w;
+          updatePreview(mathField.latex());
+          updateLatexSource(mathField.latex());
+          return;
         }
+      }
+    });
 
-      }, true); // capture phase — fires before MathQuill's own listener
-    }
-
-    attachKeyListener();
     mathField.focus();
 
     function updatePreview(latex) {

@@ -85,10 +85,42 @@
     .btn-secondary:hover { background: #e4e4e7; }
     button.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-    /* Documentation - secondary, collapsible */
-    .docs-toggle {
+    /* How to use card */
+    .how-to-card {
+      background: #f0f9ff; border: 1px solid #bae6fd;
+      border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+    .how-to-card h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px; font-weight: 600; color: var(--text);
+      margin-bottom: 10px;
+    }
+    .how-to-list {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .how-to-list li {
+      font-size: 12.5px; color: var(--text-muted);
+      padding-left: 14px; position: relative; line-height: 1.5;
+    }
+    .how-to-list li::before {
+      content: '·'; position: absolute; left: 0; color: #7dd3fc; font-weight: 700;
+    }
+    .how-to-list code {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      background: rgba(186,230,253,0.4); padding: 1px 4px; border-radius: 3px;
+      color: var(--text);
+    }
+
+    /* Shortcuts section header row */
+    .shortcuts-header-row {
       display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer; padding: 12px 0; border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+    }
+    .docs-toggle {
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; padding: 12px 0; flex: 1;
       user-select: none;
     }
     .docs-toggle h2 {
@@ -101,6 +133,14 @@
       transition: transform 0.25s ease;
     }
     .docs-toggle.open .chevron { transform: rotate(45deg); }
+    .expand-all-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 11px; color: var(--text-faint); font-family: 'Source Serif 4', serif;
+      padding: 4px 8px; border-radius: 4px; transition: color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .expand-all-btn:hover { color: var(--text-muted); background: var(--code-bg); }
+
     .docs-content {
       overflow: hidden;
       max-height: 0;
@@ -112,6 +152,23 @@
       transition: max-height 0.5s ease;
       padding-bottom: 24px;
     }
+
+    /* Search box */
+    .shortcuts-search-wrap {
+      padding: 10px 0 6px;
+    }
+    .shortcuts-search {
+      width: 100%; padding: 7px 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 12px; font-family: 'Source Serif 4', serif;
+      background: var(--surface); color: var(--text);
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .shortcuts-search:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(24,24,27,0.08);
+    }
+    .shortcuts-search::placeholder { color: var(--text-faint); }
 
     .shortcut-category { margin-bottom: 0; }
     .shortcut-category:last-child { margin-bottom: 0; }
@@ -148,6 +205,7 @@
     }
     .shortcut-item:nth-child(odd) { background: var(--code-bg); }
     .shortcut-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); }
+    .shortcut-category.hidden { display: none; }
 
     @media (max-width: 600px) {
       body { padding: 24px 16px; }
@@ -174,12 +232,34 @@
       </div>
     </div>
 
-    <!-- Documentation - secondary, collapsed by default -->
-    <div class="docs-toggle" id="docs-toggle" role="button" tabindex="0" aria-expanded="false">
-      <h2>Documentation</h2>
-      <span class="chevron">+</span>
+    <!-- Shortcuts - secondary, collapsed by default -->
+    <div class="shortcuts-header-row">
+      <div class="docs-toggle" id="docs-toggle" role="button" tabindex="0" aria-expanded="false">
+        <h2>Shortcuts</h2>
+        <span class="chevron">+</span>
+      </div>
+      <button class="expand-all-btn" id="expand-all-btn" aria-label="Expand all shortcut categories">expand all</button>
     </div>
     <div class="docs-content" id="docs-content">
+
+      <!-- How to use -->
+      <div class="how-to-card">
+        <h3>How to use</h3>
+        <ul class="how-to-list">
+          <li>Type math directly — MathQuill formats as you type</li>
+          <li>Word shortcuts: type the word (e.g. <code>sqrt</code>, <code>pi</code>, <code>int</code>) and it auto-converts</li>
+          <li>Symbol shortcuts: <code>-&gt;</code> → →, <code>=&gt;</code> → ⇒, <code>&lt;=</code> → ≤, <code>&gt;=</code> → ≥</li>
+          <li>Matrices: type <code>pmatrix</code> then Space → inserts 2×2 matrix; Tab / Shift+Tab to navigate cells</li>
+          <li>Accents: type <code>vec</code>, <code>hat</code>, <code>bar</code> etc. then the letter to accent</li>
+          <li><code>^</code> for superscript, <code>_</code> for subscript; Space to exit the box</li>
+          <li>Backspace immediately after an auto-conversion reverts it to the original typed text</li>
+        </ul>
+      </div>
+
+      <!-- Search -->
+      <div class="shortcuts-search-wrap">
+        <input type="search" class="shortcuts-search" id="shortcuts-search" placeholder="Search shortcuts…" aria-label="Search shortcuts">
+      </div>
 
       <div class="shortcut-category">
         <h4>Common Symbols</h4>
@@ -429,7 +509,7 @@
     // Render title in LaTeX
     katex.render('\\text{Math Formatter}', document.getElementById('title'), { throwOnError: false });
 
-    // Documentation toggle
+    // Shortcuts toggle
     var docsToggle = document.getElementById('docs-toggle');
     var docsContent = document.getElementById('docs-content');
     docsToggle.addEventListener('click', function() {
@@ -438,7 +518,11 @@
       docsToggle.setAttribute('aria-expanded', isOpen);
       docsToggle.querySelector('.chevron').textContent = '+';
     });
+    docsToggle.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); docsToggle.click(); }
+    });
 
+    // Category toggles
     document.querySelectorAll('.shortcut-category h4').forEach(function(h4) {
       h4.addEventListener('click', function() {
         h4.classList.toggle('open');
@@ -446,7 +530,76 @@
       });
     });
 
+    // Expand all / collapse all
+    var expandAllBtn = document.getElementById('expand-all-btn');
+    var allExpanded = false;
+    expandAllBtn.addEventListener('click', function() {
+      // First make sure the outer shortcuts panel is open
+      if (!docsContent.classList.contains('open')) {
+        docsContent.classList.add('open');
+        docsToggle.classList.add('open');
+        docsToggle.setAttribute('aria-expanded', 'true');
+      }
+      allExpanded = !allExpanded;
+      document.querySelectorAll('.shortcut-category:not(.hidden) h4').forEach(function(h4) {
+        var wrap = h4.nextElementSibling; // .shortcut-grid-wrap
+        if (allExpanded) {
+          h4.classList.add('open');
+          wrap.classList.add('open');
+        } else {
+          h4.classList.remove('open');
+          wrap.classList.remove('open');
+        }
+      });
+      expandAllBtn.textContent = allExpanded ? 'collapse all' : 'expand all';
+    });
+
+    // Search
+    document.getElementById('shortcuts-search').addEventListener('input', function() {
+      var q = this.value.trim().toLowerCase();
+      document.querySelectorAll('.shortcut-category').forEach(function(cat) {
+        var items = cat.querySelectorAll('.shortcut-item');
+        var anyMatch = false;
+        items.forEach(function(item) {
+          var text = item.textContent.toLowerCase();
+          var match = !q || text.indexOf(q) !== -1;
+          item.style.display = match ? '' : 'none';
+          if (match) anyMatch = true;
+        });
+        if (!q) {
+          cat.classList.remove('hidden');
+        } else {
+          cat.classList.toggle('hidden', !anyMatch);
+          if (anyMatch) {
+            cat.querySelector('h4').classList.add('open');
+            cat.querySelector('.shortcut-grid-wrap').classList.add('open');
+          }
+        }
+      });
+    });
+
     var MQ = MathQuill.getInterface(2);
+
+    var lastSubst = null;
+    var skipEdit  = false;
+
+    // Word commands triggered by Space.
+    // iint/iiint removed from autoCommands — MathQuill fires 'iint' before
+    // 'iiint' is complete, leaving a stray 't'. We detect them via keyup instead.
+    var WORD_CMDS = {
+      'iiint':   { type: 'write', latex: '\\iiint' },
+      'iint':    { type: 'write', latex: '\\iint' },
+      'pmatrix': { type: 'matrix', env: 'pmatrix' },
+      'bmatrix': { type: 'matrix', env: 'bmatrix' },
+      'vmatrix': { type: 'matrix', env: 'vmatrix' },
+      'Bmatrix': { type: 'matrix', env: 'Bmatrix' },
+      'matrix':  { type: 'matrix', env: 'matrix' }
+    };
+    var WORD_LIST = Object.keys(WORD_CMDS).sort(function(a,b){ return b.length - a.length; });
+
+    function insertMatrix(envName) {
+      mathField.write('\\begin{' + envName + '}&\\\\&\\end{' + envName + '}');
+    }
 
     var mathField = MQ.MathField(document.getElementById('math-field'), {
       spaceBehavesLikeTab: true,
@@ -466,7 +619,7 @@
         'perp parallel angle triangle ' +
         'star dagger diamond bullet ' +
         'aleph hbar ell wp Re Im ' +
-        'int iint iiint oint coprod bigcup bigcap ' +
+        'int oint coprod bigcup bigcap ' +
         'langle rangle lceil rceil lfloor rfloor ' +
         'ldots cdots vdots ddots ' +
         'nexists notin ' +
@@ -476,6 +629,7 @@
       supSubsRequireOperand: true,
       handlers: {
         edit: function() {
+          if (skipEdit) return;
           var latex = mathField.latex();
           updatePreview(latex);
           updateLatexSource(latex);
@@ -483,105 +637,101 @@
       }
     });
 
-    var keyBuf = '';
-    var MAX_BUF = 8;
+    // Grab textarea right after MathQuill init — it exists synchronously
+    var mqTA = document.querySelector('#math-field textarea');
 
-    var lastSubst = null; // string of chars to re-type on revert
+    // ── Arrow shortcuts ───────────────────────────────────────────────────────
+    // MathQuill already handles <= → \leq and >= → \geq natively (it swaps
+    // the strict < or > to \le/\ge when = follows). So we only need -> and =>.
+    //
+    // We use a two-key buffer on keydown. On the SECOND key of a pair we:
+    //   1. preventDefault so MathQuill never sees the second char
+    //   2. keystroke('Backspace') to remove the first char MathQuill already inserted
+    //   3. write() the target symbol
+    //
+    // This works because our keydown listener is added AFTER MathQuill's, but
+    // we only act on the SECOND key — by then the first char is already in the
+    // field and we can remove it cleanly.
+    var prevKey = '';
 
-    var MATRIX_CMDS = {
-      'pmatrix': 'pmatrix',
-      'bmatrix': 'bmatrix',
-      'vmatrix': 'vmatrix',
-      'Bmatrix': 'Bmatrix',
-      'matrix':  'matrix'
-    };
-    var MATRIX_WORDS = Object.keys(MATRIX_CMDS).sort(function(a,b){ return b.length - a.length; });
+    mqTA.addEventListener('keydown', function(e) {
+      var key = e.key;
 
-    function insertMatrix(envName) {
-      mathField.write('\\begin{' + envName + '}&\\\\&\\end{' + envName + '}');
-    }
-
-    function attachKeyListener() {
-      var ta = document.querySelector('#math-field textarea');
-      if (!ta) { setTimeout(attachKeyListener, 50); return; }
-
-      ta.addEventListener('keydown', function(e) {
-        var key = e.key;
-
-        // ── Backspace: revert last auto-substitution ──────────────────────
-        if (key === 'Backspace' && lastSubst !== null) {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove the substituted symbol
-          // Re-type the original characters literally
-          for (var ci = 0; ci < lastSubst.length; ci++) {
-            mathField.typedText(lastSubst[ci]);
-          }
-          lastSubst = null;
-          keyBuf = '';
-          return;
+      // ── Backspace revert ────────────────────────────────────────────────
+      if (key === 'Backspace' && lastSubst !== null) {
+        e.preventDefault(); e.stopImmediatePropagation();
+        mathField.keystroke('Backspace');
+        for (var ci = 0; ci < lastSubst.length; ci++) {
+          mathField.typedText(lastSubst[ci]);
         }
-
-        // Non-printable keys clear state (but let MathQuill handle them)
-        if (key.length !== 1) {
-          lastSubst = null;
-          keyBuf = '';
-          return;
-        }
-
-        // Track printable chars; any new char clears revert state
-        keyBuf = (keyBuf + key).slice(-MAX_BUF);
         lastSubst = null;
+        prevKey = '';
+        return;
+      }
 
-        var tail2 = keyBuf.slice(-2);
+      // Clear revert state on any meaningful key
+      if (key !== 'Shift' && key !== 'Control' && key !== 'Alt' && key !== 'Meta') {
+        lastSubst = null;
+      }
 
-        // ── 2-char arrow / comparison shortcuts ──────────────────────────
-        if (tail2 === '->') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '-'
-          mathField.cmd('\\rightarrow');
-          lastSubst = '->'; keyBuf = ''; return;
-        }
-        if (tail2 === '=>') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '='
-          mathField.cmd('\\Rightarrow');
-          lastSubst = '=>'; keyBuf = ''; return;
-        }
-        if (tail2 === '<=') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '<'
-          mathField.cmd('\\leq');
-          lastSubst = '<='; keyBuf = ''; return;
-        }
-        if (tail2 === '>=') {
-          e.preventDefault(); e.stopImmediatePropagation();
-          mathField.keystroke('Backspace'); // remove '>'
-          mathField.cmd('\\geq');
-          lastSubst = '>='; keyBuf = ''; return;
-        }
+      // ── -> shortcut ─────────────────────────────────────────────────────
+      if (prevKey === '-' && key === '>') {
+        e.preventDefault(); e.stopImmediatePropagation();
+        mathField.keystroke('Backspace'); // remove the '-'
+        mathField.write('\\rightarrow ');
+        lastSubst = '->';
+        prevKey = '';
+        return;
+      }
 
-        // ── Matrix shortcuts: word + Space ────────────────────────────────
-        // Space (key===' ') reaches here since length===1.
-        // We only intercept when the buffer ends with a known matrix word.
-        // Otherwise Space falls through to MathQuill (spaceBehavesLikeTab).
-        if (key === ' ') {
-          var word = keyBuf.slice(0, -1); // buffer before the space
-          for (var i = 0; i < MATRIX_WORDS.length; i++) {
-            var w = MATRIX_WORDS[i];
-            if (word.slice(-w.length) === w) {
-              e.preventDefault(); e.stopImmediatePropagation();
-              for (var j = 0; j < w.length; j++) mathField.keystroke('Backspace');
-              insertMatrix(MATRIX_CMDS[w]);
-              lastSubst = w; keyBuf = ''; return;
-            }
+      // ── => shortcut ─────────────────────────────────────────────────────
+      // Note: MathQuill handles >= natively. But => is not handled natively.
+      // When = is typed, MathQuill inserts =. When > follows, we intercept.
+      if (prevKey === '=' && key === '>') {
+        e.preventDefault(); e.stopImmediatePropagation();
+        mathField.keystroke('Backspace'); // remove the '='
+        mathField.write('\\Rightarrow ');
+        lastSubst = '=>';
+        prevKey = '';
+        return;
+      }
+
+      // Track previous printable key
+      if (key.length === 1) {
+        prevKey = key;
+      } else {
+        prevKey = '';
+      }
+    });
+
+    // ── Word shortcuts via keyup ──────────────────────────────────────────────
+    // Space is consumed by MathQuill on keydown (spaceBehavesLikeTab moves
+    // cursor to next slot). By keyup the field has settled. We check if the
+    // latex ends with a known word — if so, strip it and insert the command.
+    mqTA.addEventListener('keyup', function(e) {
+      if (e.key !== ' ') return;
+      var latex = mathField.latex();
+      for (var i = 0; i < WORD_LIST.length; i++) {
+        var w = WORD_LIST[i];
+        if (latex.slice(-w.length) === w) {
+          var cmd = WORD_CMDS[w];
+          var base = latex.slice(0, -w.length);
+          skipEdit = true;
+          mathField.latex(base);
+          skipEdit = false;
+          if (cmd.type === 'matrix') {
+            insertMatrix(cmd.env);
+          } else {
+            mathField.write(cmd.latex);
           }
-          // No match — Space falls through to MathQuill's tab-slot behavior
+          lastSubst = w;
+          updatePreview(mathField.latex());
+          updateLatexSource(mathField.latex());
+          return;
         }
+      }
+    });
 
-      }, true); // capture phase — fires before MathQuill's own listener
-    }
-
-    attachKeyListener();
     mathField.focus();
 
     function updatePreview(latex) {
@@ -597,7 +747,14 @@
 
     function updateLatexSource(latex) {
       var srcEl = document.getElementById('latex-source');
-      srcEl.childNodes[0].textContent = latex || '(empty)';
+      // The first child is the #copy-toast span; we need a text node before it.
+      // Find or create a text node at the start.
+      var textNode = srcEl.firstChild;
+      if (!textNode || textNode.nodeType !== 3) {
+        textNode = document.createTextNode('');
+        srcEl.insertBefore(textNode, srcEl.firstChild);
+      }
+      textNode.textContent = latex || '(empty)';
     }
 
     document.getElementById('btn-copy').addEventListener('click', function() {
